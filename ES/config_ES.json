@@ -1,0 +1,71 @@
+{
+    "consonants": ["b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "ñ","p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
+    "vocals": ["a", "e", "i", "o", "u"],
+    "loading": [
+        "Cargando..."
+    ],
+    "gameover": [
+        "Se acabó el tiempo! Partida terminada.",
+        "Fin del juego",
+        "El juego ha acabado, no más palabras"
+    ],
+    "gameover_larger_words": [
+        "palabras más largas que se podían decir esta partida",
+        "largas palabras que podian escribirse esta partida"
+    ],
+    "startgame": [
+        "Las letras son:",
+        "El Jumble es:"
+    ],
+    "startgame_2": [
+        "Posibles palabras: ",
+        "Palabras restantes:"
+    ],
+    "timeout": [
+       "Al parecer no hay nadie jugando (Muere ignorado)"
+    ],
+    "correct": [
+        "Bien",
+        "Buena palabra",
+        "Increible",
+        "Estás adivinando?",
+        "Acertaste",
+        "Correcto"
+    ],
+    "incorrect": [
+        "Esa palabra no existe",
+        "Palabra no válida",
+        "No está esta palabra."
+    ],
+    "repeated": [
+        "Ups! Alguien ha dicho esta palabra antes",
+        "Parece que has repetido una palabra. No vale.",
+        "Esta ya la dijeron."
+    ],
+    "hurry": [
+        "El tiempo se acaba!",
+        "Esto terminará pronto!",
+        "Pilas!! El tiempo se está acabando"
+    ],
+    "remember": [
+        "Recuerda, el Jumble es:",
+        "Recuerda, los carácteres son:"
+    ],
+    "time_left": [
+        "Tiempo restante: ->"
+    ],
+    "noplayers": [
+        "Parece que nadie ha jugado esta partida. Aburridozzz.",
+        "Ningun jugador fue visto esta partida"
+    ],
+    "players": [
+        "Top jugadores más inteligentes de esta partida.",
+        "Podio de los mejores jugadores de esta partida."
+    ],
+    "final_precomplement": [
+        "puntos"
+    ],
+    "final_complement":[
+        "palabras"
+    ]
+}
