@@ -7,7 +7,8 @@
     "gameover": [
         "Se acabó el tiempo! Partida terminada.",
         "Fin del juego",
-        "El juego ha acabado, no más palabras"
+        "El juego ha acabado, no más palabras",
+        "Se ha acabado el juego, paren de escribir"
     ],
     "gameover_larger_words": [
         "palabras más largas que se podían decir esta partida",
@@ -15,7 +16,8 @@
     ],
     "startgame": [
         "Las letras son:",
-        "El Jumble es:"
+        "El Jumble es:",
+        "Empezamos, el jumble es:"
     ],
     "startgame_2": [
         "Posibles palabras: ",
@@ -35,17 +37,20 @@
     "incorrect": [
         "Esa palabra no existe",
         "Palabra no válida",
-        "No está esta palabra."
+        "No está esta palabra.",
+        "Esa palabra no es correcta"
     ],
     "repeated": [
         "Ups! Alguien ha dicho esta palabra antes",
         "Parece que has repetido una palabra. No vale.",
-        "Esta ya la dijeron."
+        "Esta ya la dijeron.",
+        "Ya la dijo otro parcero"
     ],
     "hurry": [
         "El tiempo se acaba!",
         "Esto terminará pronto!",
-        "Pilas!! El tiempo se está acabando"
+        "Pilas!! El tiempo se está acabando",
+        "Se acaba el tiempo, apurate"
     ],
     "remember": [
         "Recuerda, el Jumble es:",
@@ -56,11 +61,13 @@
     ],
     "noplayers": [
         "Parece que nadie ha jugado esta partida. Aburridozzz.",
-        "Ningun jugador fue visto esta partida"
+        "Ningun jugador fue visto esta partida.",
+        "Sin jugadores no puedo ser un juego :("
     ],
     "players": [
         "Top jugadores más inteligentes de esta partida.",
-        "Podio de los mejores jugadores de esta partida."
+        "Podio de los mejores jugadores de esta partida.",
+        "Estos son los jugadores que mejor resultado tuvieron esta partida."
     ],
     "final_precomplement": [
         "puntos"

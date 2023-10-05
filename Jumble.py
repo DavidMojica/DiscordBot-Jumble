@@ -43,7 +43,7 @@ from c_player import Player
 #------------------------------------------------------------------------------------
 #---Bot---#
 file_config_bot     = "config_bot/config_bot.json"
-template_config_bot = {"prefix" : "#", "token": ""}
+template_config_bot = {"prefix" : "%", "token": ""}
 bot                 = None
 
 #---Jumble---#
@@ -80,6 +80,7 @@ error_3        = {'head': 'Cannot start a match now', 'body': 'Right now there i
 error_4        = {'head': 'You cant stop a match now', 'body': "You can't stop a match due to none match has started."}
 error_5        = {'head': "You can't reset a match now", "body": "You can't reset a match due to none match has started."}
 error_6        = {'head': "You can't set time to the match now", 'body': "There is not a active match."}
+error_7        = {'head': 'Invalid option', 'body': 'I have displayed some valid options and you have not said any of these. Type %jumble again.'}
 #Emojis
 emoji_numbers = ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"]
 emoji_medals  = ["🥇", " 🥈 ", " 🥉"]
@@ -226,7 +227,8 @@ def main():
                             config = "ES/config_ES.json"
                             ban  = False
                         else:
-                            pass
+                            await ctx.send(embed = Crear_Respuesta(error_7["head"] , error_7["body"]).enviar)
+                            return
                     #------------------------------------------------------------------------------------
                     #CARGA - archivos externos
                     #------------------------------------------------------------------------------------       
