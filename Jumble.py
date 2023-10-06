@@ -65,7 +65,7 @@ pesos_vocals       = [0.35,0.30,0.25,0.10]                       #Cantidad de vo
 pesos_duplicados   = [0.1, 0.20, 0.20, 0.20, 0.20, 0.1]          # Probabilidades para 0 duplicados, 1 duplicado 2 duplicados, 3dup, 4 dup y 5dup
 pesos_puntos_extra = [0.35, 0.25, 0.20, 0.15, 0.1, 0.05]         #puntos extra: 0->  35%, 1->25%, 2-> 20%, 3-> 15%, 4-> 10%, 5-> 5%
 #Active
-active_match       = False
+active_matches       = {}
 #Messages
 top_palabras   = 15
 msg_menu       = { 'head': "| JUMBLE |" , 'body': "Please select your languaje (give me a number):\n1: English\n2: Español\n0: Exit"}
@@ -145,10 +145,10 @@ def main():
         #---Jumble---#
         # @bot.command(name="time", help="Set the time (in seconds) to the Jumble match.")
         # async def time(ctx, msg):
-        #     global active_match
+        #     global active_matches
         #     global tiempo_partida
             
-        #     if active_match:
+        #     if active_matches:
         #         msg_user = int(msg.content)
         #         tiempo_partida = msg_user
         #         await ctx.send(embed = Crear_Respuesta(f'{num_to_emoji(msg_6["head"])}s', msg_6["body"]).enviar)
@@ -158,13 +158,14 @@ def main():
 
         @bot.command(name="reset", help="Restarts a jumble match.")
         async def reset(ctx):
-            global active_match
-            if active_match:
+            server_id = ctx.guild.id
+            global active_matches
+            if active_matches[server_id]:
                 await ctx.send(embed = Crear_Respuesta(msg_5["head"], msg_5["body"]).enviar)
                 global tiempo_partida
                 tiempo_partida = 0
                 
-                active_match = False
+                active_matches[server_id] = False
                 await jumble(ctx)
             else:
                 await ctx.send(embed = Crear_Respuesta(error_5["head"], error_5["body"]).enviar)
@@ -173,20 +174,24 @@ def main():
         
         @bot.command(name="stop", help="Stops a Jumble match")
         async def stop(ctx):
-            global active_match
-            if active_match:
+            server_id = ctx.guild.id
+            global active_matches
+            if active_matches:
                 await ctx.send(embed = Crear_Respuesta(msg_4["head"], msg_4["body"]).enviar)
                 global tiempo_partida
                 tiempo_partida = 0
                 
-                active_match = False
+                active_matches[server_id] = False
             else:
                 await ctx.send(embed = Crear_Respuesta(error_4["head"], error_4["body"]).enviar)
 
         
         @bot.command(name="jumble", help="Starts a Jumble match.")
         async def jumble(ctx):
-            if not active_match:
+            server_id = ctx.guild.id
+            if server_id in active_matches and active_matches[server_id]:
+                await ctx.send(embed = Crear_Respuesta(error_3["head"], error_3["body"]).enviar)
+            else:
                 #Jumble reiniciar variables
                 palabras_repetidas.clear()
                 nombre_jugadores.clear()
@@ -278,14 +283,13 @@ def main():
                                             chars_listos[char] = puntos_extra
                                         
                                         #Empezar el juego
+                                        active_matches[server_id] = True
                                         await __startgame__(ctx,cant_validas, config, chars_listos)
                         
                     except(Exception) as error:
                         print(f"{repr(error)} en segundo try")                   
                 except asyncio.TimeoutError:
                     await ctx.send(embed = Crear_Respuesta(error_1["head"], error_1["body"]).enviar)
-            else:
-                await ctx.send(embed = Crear_Respuesta(error_3["head"], error_3["body"]).enviar)
                 
         #Encender el bot
         bot.run(token)
@@ -303,8 +307,8 @@ async def __startgame__(ctx, cant_validas, config, chars):
         config (dict)     : Diccionario de configuración del juego.
         chars (dict)      : Diccionario de caracteres y sus valores asociados.
     """
-    global active_match
-    active_match = True
+    global active_matches
+    server_id = ctx.guild.id
     #Match load data
     msg_game_start   = random.choice(config["startgame"])
     msg_game_start2  = random.choice(config["startgame_2"])
@@ -324,7 +328,7 @@ async def __startgame__(ctx, cant_validas, config, chars):
         #---ENDGAME---#
         palabras_mas_largas = essentials.seleccionar_palabras_mas_largas(palabras_posibles, top_palabras)
         print(palabras_mas_largas)
-        active_match = False
+        active_matches[server_id] = False
         #----Imprimir lista de jugadores----#
         if not players:
             await ctx.send(embed = Crear_Respuesta(f'{random.choice(config["noplayers"])}' , None).enviar)
@@ -361,7 +365,8 @@ async def get_inputs(ctx, correct, incorrect, repeated, hurry, remember, time_le
         incorrect (list): Lista de mensajes de respuesta incorrecta.
         repeated (list) : Lista de mensajes de respuesta para palabra repetida.
     """
-    while active_match:
+    server_id = ctx.guild.id
+    while active_matches[server_id]:
         total_points = 0
         ban          = 0
         lop          = asyncio.get_event_loop()
