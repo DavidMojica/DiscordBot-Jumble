@@ -38,6 +38,8 @@ from discord.ext.commands import has_permissions
 #program libs
 import essentials
 from c_player import Player
+from c_match import Match
+from ds_prints import Crear_Respuesta
 #------------------------------------------------------------------------------------
 #Variables Globales
 #------------------------------------------------------------------------------------
@@ -49,21 +51,14 @@ bot                 = None
 #---Jumble---#
 tiempo_partida   = 180
 tiempo_partida_c = 180
-tiempo_aviso     = 15  #Cada tiempo se le recordarán a los jugadores las letras que pueden usar y el tiempo que les queda.
+tiempo_aviso     = 10  #Cada tiempo se le recordarán a los jugadores las letras que pueden usar y el tiempo que les queda.
 tiempo_acabando  = 12
 tiempo_contador  = None
 file             = ""
-config           = ""
 consonants       = ""
 vocals           = ""
-q_consonants     = {"min_consonants": 6, "max_consonants": 12} #Siempre tiene que haber una  diferencia de 6 
-q_vocals         = {"min_vocals": 2, "max_vocals": 5}          #Siempre tiene que haber una diferencia de 3
 timeout_menu     = 10 #Expand
-#Probabilities 
-pesos_consonants   = [0.2, 0.3, 0.3, 0.1, 0.06, 0.03, 0.01]      #Siempre tiene que haber 6 pesos
-pesos_vocals       = [0.35,0.30,0.25,0.10]                       #Cantidad de vocales: 2: 35% 3: 30% 4: 25% 5: 10%
-pesos_duplicados   = [0.1, 0.20, 0.20, 0.20, 0.20, 0.1]          # Probabilidades para 0 duplicados, 1 duplicado 2 duplicados, 3dup, 4 dup y 5dup
-pesos_puntos_extra = [0.35, 0.25, 0.20, 0.15, 0.1, 0.05]         #puntos extra: 0->  35%, 1->25%, 2-> 20%, 3-> 15%, 4-> 10%, 5-> 5%
+
 #Active
 active_matches       = {}
 #Messages
@@ -85,32 +80,11 @@ error_7        = {'head': 'Invalid option', 'body': 'I have displayed some valid
 emoji_numbers = ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"]
 emoji_medals  = ["🥇", " 🥈 ", " 🥉"]
 
-#Match variables
-chars_listos       = {}
-chars_display      = []
-palabras_posibles  = []
-palabras_dichas    = 0
-palabras_repetidas = set()
-nombre_jugadores   = set()
-
-# Jugadores
-players = []
 
 #------------------------------------------------------------------------------------
 #Clases
 #------------------------------------------------------------------------------------
-class Crear_Respuesta():
-    def __init__(self, title, content):
-        self.title = title
-        self.content = content
-        self.respuesta = discord.Embed(
-            title = self.title,
-            description=self.content,
-            colour= int("FFFFFF",16)       
-        )
-    @property
-    def enviar(self):
-        return self.respuesta
+
     
     
 #------------------------------------------------------------------------------------
@@ -169,9 +143,7 @@ def main():
                 await jumble(ctx)
             else:
                 await ctx.send(embed = Crear_Respuesta(error_5["head"], error_5["body"]).enviar)
-
-
-        
+    
         @bot.command(name="stop", help="Stops a Jumble match")
         async def stop(ctx):
             server_id = ctx.guild.id
@@ -192,12 +164,7 @@ def main():
             if server_id in active_matches and active_matches[server_id]:
                 await ctx.send(embed = Crear_Respuesta(error_3["head"], error_3["body"]).enviar)
             else:
-                #Jumble reiniciar variables
-                palabras_repetidas.clear()
-                nombre_jugadores.clear()
-                chars_display.clear()
-                players.clear()
-                
+                #Jumble reiniciar variables           
                 global tiempo_partida
                 tiempo_partida = tiempo_partida_c
                 
@@ -215,77 +182,24 @@ def main():
                 
                 def check(message):
                     return message.author == ctx.author
-                
                 try:
                     lang = await bot.wait_for("message", check=check, timeout=timeout_menu)
                     lang = lang.content # acceder al valor del mensaje
-                    while ban:
-                        if lang == "0":
-                            await ctx.send(embed = Crear_Respuesta(error_2["head"] , error_2["body"]).enviar)
-                            return
-                        elif lang == "1":
-                            file   = "EN/package_EN.json"
-                            config = "EN/config_EN.json"
-                            ban  = False
-                        elif(lang == "2"):
-                            file   = "ES/package_ES.json"
-                            config = "ES/config_ES.json"
-                            ban  = False
-                        else:
-                            await ctx.send(embed = Crear_Respuesta(error_7["head"] , error_7["body"]).enviar)
-                            return
+                    match = Match(tiempo_partida_c, lang)
+                    status = await match.load(ctx, lang)
+                    if status != "0":
+                        e = f"error_{status}"
+                        if e in globals():
+                            error_message = globals()[e]
+                            await ctx.send(embed=Crear_Respuesta(error_message["head"], error_message["body"]).enviar)
+                    else:
+                        #Empezar el juego
+                        await __startgame__(ctx, match)
                     #------------------------------------------------------------------------------------
                     #CARGA - archivos externos
                     #------------------------------------------------------------------------------------       
                     try:
-                            if os.path.exists(config):
-                                with io.open(config, encoding="utf-8") as c:
-                                    config     = json.load(c)
-                                    load_message = random.choice(config["loading"])
-                                    await ctx.send(embed = Crear_Respuesta(load_message , None).enviar)          
-                                    #seleccionamos la cantidad de letras y de duplicados de la partida 
-                                    numero_consonants = random.choices(range(q_consonants["min_consonants"], q_consonants["max_consonants"] + 1), weights=pesos_consonants)[0]
-                                    numero_vocals     = random.choices(range(q_vocals["min_vocals"], q_vocals["max_vocals"] + 1), weights=pesos_vocals)[0]
-                                    numero_duplicados = random.choices(range(6), weights=pesos_duplicados)[0]
-                        
-                                    consonants   = random.sample(config["consonants"], numero_consonants)
-                                    vocals       = random.sample(config["vocals"], numero_vocals)    
-                                    chars        = consonants + vocals
-                        
-                                    #Duplicar letras si hay que duplicarlas
-                                    for _ in range (numero_duplicados):
-                                        chars.append(random.choice(chars))
-                                    chars      = random.sample(chars, len(chars))   #Desordenar aleatoriamente el orden de los elementos del array
-
-                                    #Comprueba si el archivo de palabras existe.
-                                    if os.path.exists(file):
-                                        with io.open(file, encoding="utf-8") as f:
-                                            jfile = json.load(f)
-                                            cant_validas, lista_validas = essentials.compatibilidad(chars,jfile)
-                                            #Cargar la lista global de palabras posibles
-                                            global palabras_posibles
-                                            palabras_posibles = lista_validas
-                                            
-                                        #Otorgar puntuación a cada letra
-                                        puntos_extras_asignados = {}
-                                        
-                                        for char in chars:
-                                            if char in puntos_extras_asignados:
-                                                # Reutilizar puntos extras para letras repetidas
-                                                puntos_extra = puntos_extras_asignados[char]
-                                            else:
-                                                # Asignar nuevos puntos extras a letras no repetidas
-                                                puntos_extra = random.choices(range(1, 7), weights=pesos_puntos_extra)[0]
-                                                puntos_extras_asignados[char] = puntos_extra
-                                            pair = {}
-                                            pair[char] = puntos_extra
-                                            chars_display.append(pair)
-                                            chars_listos[char] = puntos_extra
-                                        
-                                        #Empezar el juego
-                                        active_matches[server_id] = True
-                                        await __startgame__(ctx,cant_validas, config, chars_listos)
-                        
+                        active_matches[server_id] = True
                     except(Exception) as error:
                         print(f"{repr(error)} en segundo try")                   
                 except asyncio.TimeoutError:
@@ -299,7 +213,7 @@ def main():
 #------------------------------------------------------------------------------------
 #Match - Partida
 #------------------------------------------------------------------------------------
-async def __startgame__(ctx, cant_validas, config, chars):
+async def __startgame__(ctx, match):
     """Inicia el juego y maneja la ejecución y el flujo de mensajes.
 
     Args:
@@ -309,32 +223,36 @@ async def __startgame__(ctx, cant_validas, config, chars):
     """
     global active_matches
     server_id = ctx.guild.id
+    if server_id not in active_matches:
+        active_matches[server_id] = match
+        
     #Match load data
-    msg_game_start   = random.choice(config["startgame"])
-    msg_game_start2  = random.choice(config["startgame_2"])
-    msg_game_over    = random.choice(config["gameover"])
-    msg_game_over2   = random.choice(config["gameover_larger_words"])
-    msg_tiempo_res   = random.choice(config["time_left"])
+    msg_game_start   = random.choice(match.config["startgame"])
+    msg_game_start2  = random.choice(match.config["startgame_2"])
+    msg_game_over    = random.choice(match.config["gameover"])
+    msg_game_over2   = random.choice(match.config["gameover_larger_words"])
+    msg_tiempo_res   = random.choice(match.config["time_left"])
     
     #Match Welcome print
-    await ctx.send(embed = Crear_Respuesta(f"{msg_game_start}" , f" {print_chars()}  \n{msg_game_start2}, {num_to_emoji(cant_validas)} --- {msg_tiempo_res} { num_to_emoji(tiempo_partida)}").enviar)
+    await ctx.send(embed = Crear_Respuesta(f"{msg_game_start}" , f" {print_chars(match)}  \n{msg_game_start2}, {num_to_emoji(match.cant_validas)} --- {msg_tiempo_res} { num_to_emoji(tiempo_partida)}").enviar)
                         
     #Match Execution
     try:
         #Partida
-        await asyncio.wait_for(get_inputs(ctx, config["correct"], config["incorrect"], config["repeated"], config["hurry"], config["remember"], config["time_left"], chars, msg_game_start2, cant_validas), timeout=tiempo_partida)
+        await asyncio.wait_for(get_inputs(ctx, match), timeout=tiempo_partida)
         pass
     except asyncio.TimeoutError:
         #---ENDGAME---#
-        palabras_mas_largas = essentials.seleccionar_palabras_mas_largas(palabras_posibles, top_palabras)
+        palabras_mas_largas = essentials.seleccionar_palabras_mas_largas(match.palabras_posibles, top_palabras)
         print(palabras_mas_largas)
+        match.active_match = False
         active_matches[server_id] = False
         #----Imprimir lista de jugadores----#
-        if not players:
-            await ctx.send(embed = Crear_Respuesta(f'{random.choice(config["noplayers"])}' , None).enviar)
+        if not match.players:
+            await ctx.send(embed = Crear_Respuesta(f'{random.choice(match.config["noplayers"])}' , None).enviar)
         else:
             str_players = ""
-            sorted_players = sorted(players, key=lambda x: x.points, reverse=True)
+            sorted_players = sorted(match.players, key=lambda x: x.points, reverse=True)
             
             for index, player in enumerate(sorted_players):
                 if index < 3:
@@ -342,8 +260,8 @@ async def __startgame__(ctx, cant_validas, config, chars):
                 else:
                     medal = ""
                 
-                str_players += f"{medal} {player.name}: {num_to_emoji(player.points)} {random.choice(config['final_precomplement'])} - {num_to_emoji(player.words)} {random.choice(config['final_complement'])} \n"
-            await ctx.send(embed = Crear_Respuesta( random.choice(config['players']) , f'{str_players}').enviar)
+                str_players += f"{medal} {player.name}: {num_to_emoji(player.points)} {random.choice(match.config['final_precomplement'])} - {num_to_emoji(player.words)} {random.choice(match.config['final_complement'])} \n"
+            await ctx.send(embed = Crear_Respuesta( random.choice(match.config['players']) , f'{str_players}').enviar)
             
             
         #----Imprimir palabras mas largas---#
@@ -352,12 +270,12 @@ async def __startgame__(ctx, cant_validas, config, chars):
         else:
             str_longers_w = ""
             for palabra in palabras_mas_largas:
-                total_points = calcular_puntos(palabra)
-                str_longers_w += f"**{palabra} -{num_to_emoji(total_points)}  {random.choice(config['final_precomplement'])}**  \n"
+                total_points = match.calcular_puntos(palabra)
+                str_longers_w += f"**{palabra} -{num_to_emoji(total_points)}  {random.choice(match.config['final_precomplement'])}**  \n"
                 
             await ctx.send(embed = Crear_Respuesta(f"{top_palabras} {msg_game_over2}", f"{str_longers_w}").enviar)   
 
-async def get_inputs(ctx, correct, incorrect, repeated, hurry, remember, time_left, chars, msg_gamestart_2, cant_validas):
+async def get_inputs(ctx, match):
     """ Obtiene entradas del usuario de manera asíncrona y realiza el procesamiento de puntos y mensajes.
 
     Args:
@@ -374,10 +292,10 @@ async def get_inputs(ctx, correct, incorrect, repeated, hurry, remember, time_le
         
         if tiempo_contador is None or tiempo_contador.done():
             lop             = asyncio.get_event_loop()
-            tiempo_contador = lop.create_task(contador_asincronico(ctx, hurry, remember, time_left,msg_gamestart_2, cant_validas))
+            tiempo_contador = lop.create_task(contador_asincronico(ctx, match))
         
         try:
-            user_message = await asyncio.wait_for(get_input(ctx), timeout= tiempo_partida)
+            user_message = await asyncio.wait_for(get_input(ctx, match), timeout= tiempo_partida)
             #obtener mensaje del usuario
             user_word = user_message.content
             #Contamos las palabras en la frase. Si sólo se trata de 1 palabra hacemos el proceso, sino lo ignoramos.
@@ -387,12 +305,11 @@ async def get_inputs(ctx, correct, incorrect, repeated, hurry, remember, time_le
                 user_word = essentials.sanitizar_frase(user_word)
                 
                 # Verificar si la palabra es válida y procesarla.
-                if palabras_posibles.__contains__(user_word):
-                    if user_word not in palabras_repetidas:
-                        total_points = calcular_puntos(user_word)
-                        palabras_repetidas.add(user_word)
-                        global palabras_dichas 
-                        palabras_dichas += 1
+                if match.palabras_posibles.__contains__(user_word):
+                    if user_word not in match.palabras_repetidas:
+                        total_points = match.calcular_puntos(user_word)
+                        match.palabras_repetidas.add(user_word)
+                        match.palabras_dichas += 1
                     else:
                         ban = 2
                 else:
@@ -401,24 +318,24 @@ async def get_inputs(ctx, correct, incorrect, repeated, hurry, remember, time_le
             #Outputs para cada caso de        
             if ban == 0:
                 found_player = None
-                for player in players:
+                for player in match.players:
                     if player.name == user_message.author.name:
                         found_player = player
                         break
                 
                 if found_player:
                     found_player.__addpoints__(total_points)
-                    await ctx.send(embed = Crear_Respuesta(None , f'{found_player.name} {random.choice(correct)} + {num_to_emoji(total_points)} points').enviar)
+                    await ctx.send(embed = Crear_Respuesta(None , f'{found_player.name} {random.choice(match.config["correct"])} + {num_to_emoji(total_points)}').enviar)
                 else:
                     await ctx.send(embed = Crear_Respuesta(None , 'Player not found').enviar)
             elif ban == 1:
-                await ctx.send(embed = Crear_Respuesta(None, f"{random.choice(incorrect)}").enviar)
+                await ctx.send(embed = Crear_Respuesta(None, f"{random.choice(match.config['incorrect'])}").enviar)
             elif ban == 2:
-                await ctx.send(embed = Crear_Respuesta(None, f"{random.choice(repeated)}").enviar)
+                await ctx.send(embed = Crear_Respuesta(None, f"{random.choice(match.config['repeated'])}").enviar)
         except asyncio.TimeoutError:
             break
 
-async def get_input(ctx):
+async def get_input(ctx, match):
     """
     Obtiene una entrada del usuario de manera asíncrona.
 
@@ -436,9 +353,9 @@ async def get_input(ctx):
         #obtener nombre de usuario
         user_name  = user_input.author.name
         
-        if not any(player.name == user_name for player in players):
+        if not any(player.name == user_name for player in match.players):
             new_player = Player(user_name)
-            players.append(new_player)
+            match.players.append(new_player)
         
         return user_input
     
@@ -448,7 +365,7 @@ async def get_input(ctx):
             
 
 
-async def contador_asincronico(ctx,hurry, remember, time_left, msg_gamestart_2, cant_validas):
+async def contador_asincronico(ctx, match):
     """
     Esta función simula un contador asincrónico con avisos y mensajes durante una partida.
 
@@ -465,25 +382,26 @@ async def contador_asincronico(ctx,hurry, remember, time_left, msg_gamestart_2, 
     global tiempo_aviso
     tiempo_aviso_copia = tiempo_aviso
     
-    while tiempo_partida > 0:
+    while match.time > 0:
         await asyncio.sleep(1)
-        tiempo_partida     -= 1
+        print(match.time)
+        match.time         -= 1
         tiempo_aviso_copia -= 1
         
         #Tiempo agotándose
-        if tiempo_partida == tiempo_acabando:
-            await ctx.send(embed = Crear_Respuesta(f"{random.choice(hurry)} {random.choice(time_left)} { num_to_emoji(tiempo_partida) } s" , None).enviar)
+        if match.time == tiempo_acabando:
+            await ctx.send(embed = Crear_Respuesta(f"{random.choice(match.config['hurry'])} {random.choice(match.config['time_left'])} { num_to_emoji(match.match_time) } s" , None).enviar)
             
         #Aviso cada cierto tiempo
         if tiempo_aviso_copia == 0:
-            
-            await ctx.send(embed = Crear_Respuesta(f"{random.choice(remember)}", f"{print_chars()} \n {msg_gamestart_2} {num_to_emoji(cant_validas - palabras_dichas)} \n {random.choice(time_left)} { num_to_emoji(tiempo_partida) } s").enviar)                        
+
+            await ctx.send(embed = Crear_Respuesta(f"{random.choice(match.config['remember'])}", f"{print_chars(match)} \n {random.choice(match.config['startgame_2'])} {num_to_emoji(match.cant_validas - match.palabras_dichas)} \n {random.choice(match.config['time_left'])} { num_to_emoji(match.time) } s").enviar)                        
             tiempo_aviso_copia = tiempo_aviso        
 
 #------------------------------------------------------------------------------------
 # Funciones del programa
 #------------------------------------------------------------------------------------
-def print_chars():
+def print_chars(match):
     """ 
     Imprime los caracteres y sus puntos extras en forma de lista de diccionarios.
 
@@ -499,42 +417,33 @@ def print_chars():
         None: Esta función no devuelve ningún valor; simplemente imprime la información formateada.
     """
     string_chars = ""
-    for index, dicts in enumerate(chars_display, start=1):
+    for index, dicts in enumerate(match.chars_display, start=1):
         for char, puntos in dicts.items():
             string_chars += f" **{char} - **{emoji_numbers[puntos]}"
            
             if index % 4 == 0:
                 string_chars += "\n"
-            
     return string_chars
     
 def num_to_emoji(num):
-    """
-    Convierte un numero a carácteres emoji
-
-    Args:
-        num (int): el numero a ser transformado
-
-    Returns:
-        emoji: El numero en emoji
-    """
+    """Convierte un numero a carácteres emoji """
     return ' '.join(emoji_numbers[int(n)] for n in str(num))
 
-def calcular_puntos(palabra):
-    """
-    Calcula los puntos de la palabra de acuerdo a la puntuación vigente.
+# def calcular_puntos(palabra):
+#     """
+#     Calcula los puntos de la palabra de acuerdo a la puntuación vigente.
 
-    Args:
-        palabra (str): Palabra a puntuar
+#     Args:
+#         palabra (str): Palabra a puntuar
 
-    Returns:
-        int : puntuación
-    """
-    total_points = 0
-    chars_palabra = [char for char in palabra]
-    for char in chars_palabra:
-        total_points += chars_listos.get(char, 0)
-    return total_points
+#     Returns:
+#         int : puntuación
+#     """
+#     total_points = 0
+#     chars_palabra = [char for char in palabra]
+#     for char in chars_palabra:
+#         total_points += chars_listos.get(char, 0)
+#     return total_points
 #------------------------------------------------------------------------------------
 #Inicio del programa
 #------------------------------------------------------------------------------------
