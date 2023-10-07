@@ -1,4 +1,6 @@
 import unicodedata
+#Emojis
+emoji_medals  = ["🥇", " 🥈 ", " 🥉"]
 emoji_numbers = ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"]
 def num_to_emoji(num):
     """Convierte un numero a carácteres emoji """

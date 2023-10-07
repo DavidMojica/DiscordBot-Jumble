@@ -4,13 +4,16 @@ import json
 import random
 import asyncio
 import essentials
+from c_player import Player
 from ds_prints import Crear_Respuesta
+# from Jumble import active_matches, bot
 
 
 class Match:
     def __init__(self, match_time, match_lang):
-        self.active_match = False
+        self.active_match = True
         self.time = match_time
+        self.time_copy = match_time
         self.total_posible_words = None
         self.match_lang = match_lang
         #adverts
@@ -31,6 +34,7 @@ class Match:
         
         #words
         self.cant_validas = 0
+        self.top_palabras = 15
         # Siempre tiene que haber 6 pesos
         self.pesos_consonants = [0.2, 0.3, 0.3, 0.1, 0.06, 0.03, 0.01]
         # Cantidad de vocales: 2: 35% 3: 30% 4: 25% 5: 10%
@@ -45,7 +49,88 @@ class Match:
         self.palabras_posibles = []
         self.palabras_dichas = 0
         self.time_left = 0
+        self.tiempo_contador = None
+    
+    async def get_input(self, ctx, bot):
+        """
+        Obtiene una entrada del usuario de manera asíncrona.
+
+        Utiliza el bucle de eventos asyncio para ejecutar la función de entrada (input()) en un
+        executor en segundo plano, lo que permite que la operación de entrada no bloquee el bucle
+        de eventos principal.
+
+        Returns:
+            str: La cadena de entrada proporcionada por el usuario.
+        """
+        print("patch 3")
+        def check(message):
+            return len(message.content.split()) == 1 and message.channel == ctx.channel
+        try:
+            user_input = await bot.wait_for("message", check=check, timeout=self.time_copy)  # Esperar 60 segundos
+            #obtener nombre de usuario
+            user_name  = user_input.author.name
+            
+            if not any(player.name == user_name for player in self.players):
+                new_player = Player(user_name)
+                self.players.append(new_player)
+            
+            return user_input
         
+        except asyncio.TimeoutError:
+            await ctx.send("Tiempo de espera agotado o entrada inválida.")
+               
+    async def get_inputs(self, ctx, bot):
+        print("patch 1")
+        server_id = ctx.guild.id
+        while self.active_match:
+            print("patch 2")
+            total_points = 0
+            ban          = 0
+            lop          = asyncio.get_event_loop()
+            
+            if self.tiempo_contador is None or self.tiempo_contador.done():
+                lop          = asyncio.get_event_loop()
+                self.tiempo_contador = lop.create_task(self.contador_asincronico(ctx))
+                
+            try:
+                user_message = await asyncio.wait_for(self.get_input(ctx, bot), timeout= self.time_copy)
+                user_word = user_message.content
+                print("patch 4")
+                if len(user_word.split()) == 1:
+                    #Eliminar espacios, tildes y mayusculas de la frase
+                    user_word = essentials.sanitizar_frase(user_word)
+                    
+                    # Verificar si la palabra es válida y procesarla.
+                    if self.palabras_posibles.__contains__(user_word):
+                        if user_word not in self.palabras_repetidas:
+                            total_points = self.calcular_puntos(user_word)
+                            self.palabras_repetidas.add(user_word)
+                            self.palabras_dichas += 1
+                        else:
+                            ban = 2
+                    else:
+                        ban = 1
+                
+                #Outputs para cada caso de ban    
+                if ban == 0:
+                    found_player = None
+                    for player in self.players:
+                        if player.name == user_message.author.name:
+                            found_player = player
+                            break
+                    
+                    if found_player:
+                        found_player.__addpoints__(total_points)
+                        await ctx.send(embed = Crear_Respuesta(None , f'{found_player.name} {random.choice(self.config["correct"])} + {essentials.num_to_emoji(total_points)}').enviar)
+                    else:
+                        await ctx.send(embed = Crear_Respuesta(None , 'Player not found').enviar)
+                elif ban == 1:
+                    await ctx.send(embed = Crear_Respuesta(None, f"{random.choice(self.config['incorrect'])}").enviar)
+                elif ban == 2:
+                    await ctx.send(embed = Crear_Respuesta(None, f"{random.choice(self.config['repeated'])}").enviar)
+            
+            except asyncio.TimeoutError:
+                break
 
     async def contador_asincronico(self, ctx):
         try:
@@ -58,24 +143,64 @@ class Match:
                 time_advert_copy -= 1
                 
                 #aviso cada cierto tiempo
-                if time_advert_copy == 0:
+                if time_advert_copy == 0 and self.time > 15:
                     await ctx.send(embed = Crear_Respuesta(f"{random.choice(self.config['remember'])}", f"{essentials.print_chars(self)} \n {random.choice(self.config['startgame_2'])} {essentials.num_to_emoji(self.cant_validas - self.palabras_dichas)} \n {random.choice(self.config['time_left'])} { essentials.num_to_emoji(self.time) } s").enviar)
                     time_advert_copy = self.time_advert
                 
                 #Tiempo agotándose
                 if self.time == self.time_going_out:
                         await ctx.send(embed = Crear_Respuesta(f"{random.choice(self.config['hurry'])} {random.choice(self.config['time_left'])} { essentials.num_to_emoji(self.time) } s" , None).enviar)
+        
         except Exception as e:
             print(f"excepcion: {str(e)}")
             
+    async def start(self, ctx):
+        #Match Welcome print
+        await ctx.send(embed = Crear_Respuesta(f"{random.choice(self.config['startgame'])}" , f" {essentials.print_chars(self)}  \n{random.choice(self.config['startgame_2'])}, {essentials.num_to_emoji(self.cant_validas)} --- {random.choice(self.config['time_left'])} { essentials.num_to_emoji(self.time)}").enviar)
+        
 
-    def start(self):
-        self.active_match = True
-
-    def end(self):
+    async def end(self, ctx):
+        server_id = ctx.guild.id
+        print("end")
+        palabras_mas_largas = essentials.seleccionar_palabras_mas_largas(self.palabras_posibles, self.top_palabras)
+        print(palabras_mas_largas)
         self.active_match = False
         self.clear_data()
-
+        
+        if not self.players:
+            await ctx.send(embed = Crear_Respuesta(f'{random.choice(self.config["noplayers"])}' , None).enviar)
+        else:
+            str_players = ""
+            sorted_players = sorted(self.players, key=lambda x: x.points, reverse=True)
+            
+            for index, player in enumerate(sorted_players):
+                if index < 3:
+                    medal = essentials.emoji_medals[index]
+                else:
+                    medal = ""
+                
+                str_players += f"{medal} {player.name}: {essentials.num_to_emoji(player.points)} {random.choice(self.config['final_precomplement'])} - {essentials.num_to_emoji(player.words)} {random.choice(self.config['final_complement'])} \n"
+            await ctx.send(embed = Crear_Respuesta( random.choice(self.config['players']) , f'{str_players}').enviar)
+        
+        #----Imprimir palabras mas largas---#
+        if not palabras_mas_largas:
+            await ctx.send(embed = Crear_Respuesta(f"Oops! Too unlucky ://" , None).enviar)
+        else:
+            str_longers_w = ""
+            for palabra in palabras_mas_largas:
+                total_points = self.calcular_puntos(palabra)
+                str_longers_w += f"**{palabra} -{essentials.num_to_emoji(total_points)}  {random.choice(self.config['final_precomplement'])}**  \n"
+                
+            await ctx.send(embed = Crear_Respuesta(f"{self.top_palabras} {random.choice(self.config['gameover_larger_words'])}", f"{str_longers_w}").enviar)   
+        
+        
+        
+        return server_id
+        
+    
+    
+    
+    
     def clear_data(self):
         self.chars = {}
 
@@ -118,9 +243,7 @@ class Match:
                 return "7"
 
         if os.path.exists(config):
-            print("patch 1")
             with io.open(config, encoding="utf-8") as c:
-                print("patch 2")
                 self.config = json.load(c)
                 load_message = random.choice(self.config["loading"])
                 await ctx.send(embed=Crear_Respuesta(load_message, None).enviar)

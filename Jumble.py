@@ -50,10 +50,10 @@ template_config_bot = {"prefix" : "%", "token": ""}
 bot                 = None
 
 #---Jumble---#
-tiempo_partida   = 180
-tiempo_partida_c = 180
+tiempo_partida   = 15
+tiempo_partida_c = 15
 tiempo_aviso     = 10  #Cada tiempo se le recordarán a los jugadores las letras que pueden usar y el tiempo que les queda.
-tiempo_contador  = None
+# tiempo_contador  = None
 file             = ""
 consonants       = ""
 vocals           = ""
@@ -62,7 +62,7 @@ timeout_menu     = 10 #Expand
 #Active
 active_matches       = {}
 #Messages
-top_palabras   = 15
+
 msg_menu       = { 'head': "| JUMBLE |" , 'body': "Please select your languaje (give me a number):\n1: English\n2: Español\n0: Exit"}
 msg_4          = {'head': 'Stopped match', 'body': 'The match has been stoped.'}
 msg_5          = {'head': 'Reseted', 'body': 'The match is reestarting...'}
@@ -76,8 +76,7 @@ error_4        = {'head': 'You cant stop a match now', 'body': "You can't stop a
 error_5        = {'head': "You can't reset a match now", "body": "You can't reset a match due to none match has started."}
 error_6        = {'head': "You can't set time to the match now", 'body': "There is not a active match."}
 error_7        = {'head': 'Invalid option', 'body': 'I have displayed some valid options and you have not said any of these. Type %jumble again.'}
-#Emojis
-emoji_medals  = ["🥇", " 🥈 ", " 🥉"]
+
 
 
 #------------------------------------------------------------------------------------
@@ -160,7 +159,7 @@ def main():
         @bot.command(name="jumble", help="Starts a Jumble match.")
         async def jumble(ctx):
             server_id = ctx.guild.id
-            if server_id in active_matches and active_matches[server_id]:
+            if server_id in active_matches:
                 await ctx.send(embed = Crear_Respuesta(error_3["head"], error_3["body"]).enviar)
             else:
                 #Jumble reiniciar variables           
@@ -191,15 +190,13 @@ def main():
                             error_message = globals()[e]
                             await ctx.send(embed=Crear_Respuesta(error_message["head"], error_message["body"]).enviar)
                     else:
-                        #Empezar el juego
+                        active_matches[server_id] = match
+                        print(active_matches)
                         await __startgame__(ctx, match)
                     #------------------------------------------------------------------------------------
                     #CARGA - archivos externos
                     #------------------------------------------------------------------------------------       
-                    try:
-                        active_matches[server_id] = True
-                    except(Exception) as error:
-                        print(f"{repr(error)} en segundo try")                   
+                 
                 except asyncio.TimeoutError:
                     await ctx.send(embed = Crear_Respuesta(error_1["head"], error_1["body"]).enviar)
                 
@@ -221,15 +218,12 @@ async def __startgame__(ctx, match):
     """
     global active_matches
     server_id = ctx.guild.id
-    if server_id not in active_matches:
-        active_matches[server_id] = match
         
     #Match load data
-    msg_game_start   = ""
-    msg_game_start2  = random.choice()
-    msg_game_over    = random.choice(match.config["gameover"])
-    # msg_game_over2   = ""
-    # msg_tiempo_res   = ""
+    # msg_game_start   = ""
+    # msg_game_over    = random.choice(match.config["gameover"])
+    # # msg_game_over2   = ""
+    # # msg_tiempo_res   = ""
     
     #Match Welcome print
     await ctx.send(embed = Crear_Respuesta(f"{random.choice(match.config['startgame'])}" , f" {print_chars(match)}  \n{random.choice(match.config['startgame_2'])}, {essentials.num_to_emoji(match.cant_validas)} --- {random.choice(match.config['time_left'])} { essentials.num_to_emoji(tiempo_partida)}").enviar)
@@ -237,128 +231,130 @@ async def __startgame__(ctx, match):
     #Match Execution
     try:
         #Partida
-        await asyncio.wait_for(get_inputs(ctx, match), timeout=tiempo_partida)
-        pass
+        await asyncio.wait_for(match.get_inputs(ctx, bot), timeout=tiempo_partida)
     except asyncio.TimeoutError:
         #---ENDGAME---#
-        palabras_mas_largas = essentials.seleccionar_palabras_mas_largas(match.palabras_posibles, top_palabras)
-        print(palabras_mas_largas)
-        match.active_match = False
-        active_matches[server_id] = False
-        #----Imprimir lista de jugadores----#
-        if not match.players:
-            await ctx.send(embed = Crear_Respuesta(f'{random.choice(match.config["noplayers"])}' , None).enviar)
-        else:
-            str_players = ""
-            sorted_players = sorted(match.players, key=lambda x: x.points, reverse=True)
+        server_id = await match.end(ctx)
+        del active_matches[server_id] # Remover el id del servidor y la partida
+        
+        # palabras_mas_largas = essentials.seleccionar_palabras_mas_largas(match.palabras_posibles, top_palabras)
+        # print(palabras_mas_largas)
+        # match.active_match = False
+        # active_matches[server_id] = False
+        # #----Imprimir lista de jugadores----#
+        # if not match.players:
+        #     await ctx.send(embed = Crear_Respuesta(f'{random.choice(match.config["noplayers"])}' , None).enviar)
+        # else:
+        #     str_players = ""
+        #     sorted_players = sorted(match.players, key=lambda x: x.points, reverse=True)
             
-            for index, player in enumerate(sorted_players):
-                if index < 3:
-                    medal = emoji_medals[index]
-                else:
-                    medal = ""
+        #     for index, player in enumerate(sorted_players):
+        #         if index < 3:
+        #             medal = emoji_medals[index]
+        #         else:
+        #             medal = ""
                 
-                str_players += f"{medal} {player.name}: {essentials.num_to_emoji(player.points)} {random.choice(match.config['final_precomplement'])} - {essentials.num_to_emoji(player.words)} {random.choice(match.config['final_complement'])} \n"
-            await ctx.send(embed = Crear_Respuesta( random.choice(match.config['players']) , f'{str_players}').enviar)
+        #         str_players += f"{medal} {player.name}: {essentials.num_to_emoji(player.points)} {random.choice(match.config['final_precomplement'])} - {essentials.num_to_emoji(player.words)} {random.choice(match.config['final_complement'])} \n"
+        #     await ctx.send(embed = Crear_Respuesta( random.choice(match.config['players']) , f'{str_players}').enviar)
             
             
-        #----Imprimir palabras mas largas---#
-        if not palabras_mas_largas:
-            await ctx.send(embed = Crear_Respuesta(f"Oops! Too unlucky ://" , None).enviar)
-        else:
-            str_longers_w = ""
-            for palabra in palabras_mas_largas:
-                total_points = match.calcular_puntos(palabra)
-                str_longers_w += f"**{palabra} -{essentials.num_to_emoji(total_points)}  {random.choice(match.config['final_precomplement'])}**  \n"
+        # #----Imprimir palabras mas largas---#
+        # if not palabras_mas_largas:
+        #     await ctx.send(embed = Crear_Respuesta(f"Oops! Too unlucky ://" , None).enviar)
+        # else:
+        #     str_longers_w = ""
+        #     for palabra in palabras_mas_largas:
+        #         total_points = match.calcular_puntos(palabra)
+        #         str_longers_w += f"**{palabra} -{essentials.num_to_emoji(total_points)}  {random.choice(match.config['final_precomplement'])}**  \n"
                 
-            await ctx.send(embed = Crear_Respuesta(f"{top_palabras} {random.choice(match.config['gameover_larger_words'])}", f"{str_longers_w}").enviar)   
+        #     await ctx.send(embed = Crear_Respuesta(f"{top_palabras} {random.choice(match.config['gameover_larger_words'])}", f"{str_longers_w}").enviar)   
 
-async def get_inputs(ctx, match):
-    """ Obtiene entradas del usuario de manera asíncrona y realiza el procesamiento de puntos y mensajes.
+# async def get_inputs(ctx, match):
+#     """ Obtiene entradas del usuario de manera asíncrona y realiza el procesamiento de puntos y mensajes.
 
-    Args:
-        correct (list)  : Lista de mensajes de respuesta correcta.
-        incorrect (list): Lista de mensajes de respuesta incorrecta.
-        repeated (list) : Lista de mensajes de respuesta para palabra repetida.
-    """
-    server_id = ctx.guild.id
-    while active_matches[server_id]:
-        total_points = 0
-        ban          = 0
-        lop          = asyncio.get_event_loop()
-        global tiempo_contador
+#     Args:
+#         correct (list)  : Lista de mensajes de respuesta correcta.
+#         incorrect (list): Lista de mensajes de respuesta incorrecta.
+#         repeated (list) : Lista de mensajes de respuesta para palabra repetida.
+#     """
+#     server_id = ctx.guild.id
+#     while active_matches[server_id]:
+#         total_points = 0
+#         ban          = 0
+#         lop          = asyncio.get_event_loop()
+#         # global tiempo_contador
         
-        if tiempo_contador is None or tiempo_contador.done():
-            lop             = asyncio.get_event_loop()
-            tiempo_contador = lop.create_task(match.contador_asincronico(ctx))
+#         if tiempo_contador is None or tiempo_contador.done():
+#             lop             = asyncio.get_event_loop()
+#             tiempo_contador = lop.create_task(match.contador_asincronico(ctx))
         
-        try:
-            user_message = await asyncio.wait_for(get_input(ctx, match), timeout= tiempo_partida)
-            #obtener mensaje del usuario
-            user_word = user_message.content
-            #Contamos las palabras en la frase. Si sólo se trata de 1 palabra hacemos el proceso, sino lo ignoramos.
-            if len(user_word.split()) == 1:
+#         try:
+#             user_message = await asyncio.wait_for(get_input(ctx, match), timeout= tiempo_partida)
+#             #obtener mensaje del usuario
+#             user_word = user_message.content
+#             #Contamos las palabras en la frase. Si sólo se trata de 1 palabra hacemos el proceso, sino lo ignoramos.
+#             if len(user_word.split()) == 1:
                 
-                #Eliminar espacios, tildes y mayusculas de la frase
-                user_word = essentials.sanitizar_frase(user_word)
+#                 #Eliminar espacios, tildes y mayusculas de la frase
+#                 user_word = essentials.sanitizar_frase(user_word)
                 
-                # Verificar si la palabra es válida y procesarla.
-                if match.palabras_posibles.__contains__(user_word):
-                    if user_word not in match.palabras_repetidas:
-                        total_points = match.calcular_puntos(user_word)
-                        match.palabras_repetidas.add(user_word)
-                        match.palabras_dichas += 1
-                    else:
-                        ban = 2
-                else:
-                    ban = 1
+#                 # Verificar si la palabra es válida y procesarla.
+#                 if match.palabras_posibles.__contains__(user_word):
+#                     if user_word not in match.palabras_repetidas:
+#                         total_points = match.calcular_puntos(user_word)
+#                         match.palabras_repetidas.add(user_word)
+#                         match.palabras_dichas += 1
+#                     else:
+#                         ban = 2
+#                 else:
+#                     ban = 1
                 
-            #Outputs para cada caso de        
-            if ban == 0:
-                found_player = None
-                for player in match.players:
-                    if player.name == user_message.author.name:
-                        found_player = player
-                        break
+#             #Outputs para cada caso de        
+#             if ban == 0:
+#                 found_player = None
+#                 for player in match.players:
+#                     if player.name == user_message.author.name:
+#                         found_player = player
+#                         break
                 
-                if found_player:
-                    found_player.__addpoints__(total_points)
-                    await ctx.send(embed = Crear_Respuesta(None , f'{found_player.name} {random.choice(match.config["correct"])} + {essentials.num_to_emoji(total_points)}').enviar)
-                else:
-                    await ctx.send(embed = Crear_Respuesta(None , 'Player not found').enviar)
-            elif ban == 1:
-                await ctx.send(embed = Crear_Respuesta(None, f"{random.choice(match.config['incorrect'])}").enviar)
-            elif ban == 2:
-                await ctx.send(embed = Crear_Respuesta(None, f"{random.choice(match.config['repeated'])}").enviar)
-        except asyncio.TimeoutError:
-            break
+#                 if found_player:
+#                     found_player.__addpoints__(total_points)
+#                     await ctx.send(embed = Crear_Respuesta(None , f'{found_player.name} {random.choice(match.config["correct"])} + {essentials.num_to_emoji(total_points)}').enviar)
+#                 else:
+#                     await ctx.send(embed = Crear_Respuesta(None , 'Player not found').enviar)
+#             elif ban == 1:
+#                 await ctx.send(embed = Crear_Respuesta(None, f"{random.choice(match.config['incorrect'])}").enviar)
+#             elif ban == 2:
+#                 await ctx.send(embed = Crear_Respuesta(None, f"{random.choice(match.config['repeated'])}").enviar)
+#         except asyncio.TimeoutError:
+#             break
 
-async def get_input(ctx, match):
-    """
-    Obtiene una entrada del usuario de manera asíncrona.
+# async def get_input(ctx, match):
+#     """
+#     Obtiene una entrada del usuario de manera asíncrona.
 
-    Utiliza el bucle de eventos asyncio para ejecutar la función de entrada (input()) en un
-    executor en segundo plano, lo que permite que la operación de entrada no bloquee el bucle
-    de eventos principal.
+#     Utiliza el bucle de eventos asyncio para ejecutar la función de entrada (input()) en un
+#     executor en segundo plano, lo que permite que la operación de entrada no bloquee el bucle
+#     de eventos principal.
 
-    Returns:
-        str: La cadena de entrada proporcionada por el usuario.
-    """
-    def check(message):
-        return len(message.content.split()) == 1 and message.channel == ctx.channel
-    try:
-        user_input = await bot.wait_for("message", check=check, timeout=tiempo_partida)  # Esperar 60 segundos
-        #obtener nombre de usuario
-        user_name  = user_input.author.name
+#     Returns:
+#         str: La cadena de entrada proporcionada por el usuario.
+#     """
+#     def check(message):
+#         return len(message.content.split()) == 1 and message.channel == ctx.channel
+#     try:
+#         user_input = await bot.wait_for("message", check=check, timeout=tiempo_partida)  # Esperar 60 segundos
+#         #obtener nombre de usuario
+#         user_name  = user_input.author.name
         
-        if not any(player.name == user_name for player in match.players):
-            new_player = Player(user_name)
-            match.players.append(new_player)
+#         if not any(player.name == user_name for player in match.players):
+#             new_player = Player(user_name)
+#             match.players.append(new_player)
         
-        return user_input
+#         return user_input
     
-    except asyncio.TimeoutError:
-        await ctx.send("Tiempo de espera agotado o entrada inválida.")
+#     except asyncio.TimeoutError:
+#         await ctx.send("Tiempo de espera agotado o entrada inválida.")
 
             
 
