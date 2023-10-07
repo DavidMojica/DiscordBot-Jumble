@@ -37,6 +37,7 @@ from discord.ext import commands
 from discord.ext.commands import has_permissions
 #program libs
 import essentials
+from essentials import emoji_numbers, print_chars
 from c_player import Player
 from c_match import Match
 from ds_prints import Crear_Respuesta
@@ -52,7 +53,6 @@ bot                 = None
 tiempo_partida   = 180
 tiempo_partida_c = 180
 tiempo_aviso     = 10  #Cada tiempo se le recordarán a los jugadores las letras que pueden usar y el tiempo que les queda.
-tiempo_acabando  = 12
 tiempo_contador  = None
 file             = ""
 consonants       = ""
@@ -77,7 +77,6 @@ error_5        = {'head': "You can't reset a match now", "body": "You can't rese
 error_6        = {'head': "You can't set time to the match now", 'body': "There is not a active match."}
 error_7        = {'head': 'Invalid option', 'body': 'I have displayed some valid options and you have not said any of these. Type %jumble again.'}
 #Emojis
-emoji_numbers = ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"]
 emoji_medals  = ["🥇", " 🥈 ", " 🥉"]
 
 
@@ -177,7 +176,6 @@ def main():
                 #--------------------------------------------------------------------------------
                 #Menu
                 #--------------------------------------------------------------------------------
-                ban = True
                 await ctx.send(embed = Crear_Respuesta(msg_menu["head"] , msg_menu["body"]).enviar)
                 
                 def check(message):
@@ -227,14 +225,14 @@ async def __startgame__(ctx, match):
         active_matches[server_id] = match
         
     #Match load data
-    msg_game_start   = random.choice(match.config["startgame"])
-    msg_game_start2  = random.choice(match.config["startgame_2"])
+    msg_game_start   = ""
+    msg_game_start2  = random.choice()
     msg_game_over    = random.choice(match.config["gameover"])
-    msg_game_over2   = random.choice(match.config["gameover_larger_words"])
-    msg_tiempo_res   = random.choice(match.config["time_left"])
+    # msg_game_over2   = ""
+    # msg_tiempo_res   = ""
     
     #Match Welcome print
-    await ctx.send(embed = Crear_Respuesta(f"{msg_game_start}" , f" {print_chars(match)}  \n{msg_game_start2}, {num_to_emoji(match.cant_validas)} --- {msg_tiempo_res} { num_to_emoji(tiempo_partida)}").enviar)
+    await ctx.send(embed = Crear_Respuesta(f"{random.choice(match.config['startgame'])}" , f" {print_chars(match)}  \n{random.choice(match.config['startgame_2'])}, {essentials.num_to_emoji(match.cant_validas)} --- {random.choice(match.config['time_left'])} { essentials.num_to_emoji(tiempo_partida)}").enviar)
                         
     #Match Execution
     try:
@@ -260,7 +258,7 @@ async def __startgame__(ctx, match):
                 else:
                     medal = ""
                 
-                str_players += f"{medal} {player.name}: {num_to_emoji(player.points)} {random.choice(match.config['final_precomplement'])} - {num_to_emoji(player.words)} {random.choice(match.config['final_complement'])} \n"
+                str_players += f"{medal} {player.name}: {essentials.num_to_emoji(player.points)} {random.choice(match.config['final_precomplement'])} - {essentials.num_to_emoji(player.words)} {random.choice(match.config['final_complement'])} \n"
             await ctx.send(embed = Crear_Respuesta( random.choice(match.config['players']) , f'{str_players}').enviar)
             
             
@@ -271,9 +269,9 @@ async def __startgame__(ctx, match):
             str_longers_w = ""
             for palabra in palabras_mas_largas:
                 total_points = match.calcular_puntos(palabra)
-                str_longers_w += f"**{palabra} -{num_to_emoji(total_points)}  {random.choice(match.config['final_precomplement'])}**  \n"
+                str_longers_w += f"**{palabra} -{essentials.num_to_emoji(total_points)}  {random.choice(match.config['final_precomplement'])}**  \n"
                 
-            await ctx.send(embed = Crear_Respuesta(f"{top_palabras} {msg_game_over2}", f"{str_longers_w}").enviar)   
+            await ctx.send(embed = Crear_Respuesta(f"{top_palabras} {random.choice(match.config['gameover_larger_words'])}", f"{str_longers_w}").enviar)   
 
 async def get_inputs(ctx, match):
     """ Obtiene entradas del usuario de manera asíncrona y realiza el procesamiento de puntos y mensajes.
@@ -292,7 +290,7 @@ async def get_inputs(ctx, match):
         
         if tiempo_contador is None or tiempo_contador.done():
             lop             = asyncio.get_event_loop()
-            tiempo_contador = lop.create_task(contador_asincronico(ctx, match))
+            tiempo_contador = lop.create_task(match.contador_asincronico(ctx))
         
         try:
             user_message = await asyncio.wait_for(get_input(ctx, match), timeout= tiempo_partida)
@@ -325,7 +323,7 @@ async def get_inputs(ctx, match):
                 
                 if found_player:
                     found_player.__addpoints__(total_points)
-                    await ctx.send(embed = Crear_Respuesta(None , f'{found_player.name} {random.choice(match.config["correct"])} + {num_to_emoji(total_points)}').enviar)
+                    await ctx.send(embed = Crear_Respuesta(None , f'{found_player.name} {random.choice(match.config["correct"])} + {essentials.num_to_emoji(total_points)}').enviar)
                 else:
                     await ctx.send(embed = Crear_Respuesta(None , 'Player not found').enviar)
             elif ban == 1:
@@ -365,69 +363,45 @@ async def get_input(ctx, match):
             
 
 
-async def contador_asincronico(ctx, match):
-    """
-    Esta función simula un contador asincrónico con avisos y mensajes durante una partida.
+# async def contador_asincronico(ctx, match):
+#     """
+#     Esta función simula un contador asincrónico con avisos y mensajes durante una partida.
 
-    Parámetros:
-    hurry (list): Lista de mensajes de prisa.
-    remember (list): Lista de mensajes de recordatorio.
-    time_left (list): Lista de mensajes sobre el tiempo restante.
-    chars (str): Caracteres válidos.
-    msg_gamestart_2 (str): Mensaje de inicio de partida.
-    cant_validas (int): Cantidad de palabras válidas.
-    """
-    #tiempo
-    global tiempo_partida
-    global tiempo_aviso
-    tiempo_aviso_copia = tiempo_aviso
+#     Parámetros:
+#     hurry (list): Lista de mensajes de prisa.
+#     remember (list): Lista de mensajes de recordatorio.
+#     time_left (list): Lista de mensajes sobre el tiempo restante.
+#     chars (str): Caracteres válidos.
+#     msg_gamestart_2 (str): Mensaje de inicio de partida.
+#     cant_validas (int): Cantidad de palabras válidas.
+#     """
+#     #tiempo
+#     global tiempo_partida
+#     global tiempo_aviso
+#     tiempo_aviso_copia = tiempo_aviso
     
-    while match.time > 0:
-        await asyncio.sleep(1)
-        print(match.time)
-        match.time         -= 1
-        tiempo_aviso_copia -= 1
+#     while match.time > 0:
+#         await asyncio.sleep(1)
+#         print(match.time)
+#         match.time         -= 1
+#         tiempo_aviso_copia -= 1
         
-        #Tiempo agotándose
-        if match.time == tiempo_acabando:
-            await ctx.send(embed = Crear_Respuesta(f"{random.choice(match.config['hurry'])} {random.choice(match.config['time_left'])} { num_to_emoji(match.match_time) } s" , None).enviar)
+#         #Tiempo agotándose
+#         if match.time == tiempo_acabando:
+#             await ctx.send(embed = Crear_Respuesta(f"{random.choice(match.config['hurry'])} {random.choice(match.config['time_left'])} { essentials.essentials.(match.match_time) } s" , None).enviar)
             
-        #Aviso cada cierto tiempo
-        if tiempo_aviso_copia == 0:
+#         #Aviso cada cierto tiempo
+#         if tiempo_aviso_copia == 0:
 
-            await ctx.send(embed = Crear_Respuesta(f"{random.choice(match.config['remember'])}", f"{print_chars(match)} \n {random.choice(match.config['startgame_2'])} {num_to_emoji(match.cant_validas - match.palabras_dichas)} \n {random.choice(match.config['time_left'])} { num_to_emoji(match.time) } s").enviar)                        
-            tiempo_aviso_copia = tiempo_aviso        
+#             await ctx.send(embed = Crear_Respuesta(f"{random.choice(match.config['remember'])}", f"{print_chars(match)} \n {random.choice(match.config['startgame_2'])} {essentials.num_to_emoji(match.cant_validas - match.palabras_dichas)} \n {random.choice(match.config['time_left'])} { essentials.num_to_emoji(match.time) } s").enviar)                        
+#             tiempo_aviso_copia = tiempo_aviso        
 
 #------------------------------------------------------------------------------------
 # Funciones del programa
 #------------------------------------------------------------------------------------
-def print_chars(match):
-    """ 
-    Imprime los caracteres y sus puntos extras en forma de lista de diccionarios.
 
-    Esta función toma como entrada un mensaje (msg) y la cantidad de palabras válidas (cant_validas) que el usuario puede encontrar.
-    Luego recorre la lista de diccionarios chars_display, que contiene los caracteres y sus respectivos puntos extras,
-    y los imprime en un formato legible.
-
-    Args:
-        msg (str): Mensaje que se imprimirá junto a la cantidad de palabras válidas.
-        cant_validas (int): Cantidad de palabras válidas que el usuario puede encontrar.
-
-    Returns:
-        None: Esta función no devuelve ningún valor; simplemente imprime la información formateada.
-    """
-    string_chars = ""
-    for index, dicts in enumerate(match.chars_display, start=1):
-        for char, puntos in dicts.items():
-            string_chars += f" **{char} - **{emoji_numbers[puntos]}"
-           
-            if index % 4 == 0:
-                string_chars += "\n"
-    return string_chars
     
-def num_to_emoji(num):
-    """Convierte un numero a carácteres emoji """
-    return ' '.join(emoji_numbers[int(n)] for n in str(num))
+
 
 # def calcular_puntos(palabra):
 #     """
