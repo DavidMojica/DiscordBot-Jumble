@@ -1,4 +1,62 @@
+#***************************************************************#
+#                  .                        *                *  #
+#                *          MADE BY            .                #
+#        *           _____,    _..-=-=-=-=-====--,  *   .       #
+#       _         _.'a   /  .-',___,..=--=--==-'`               #
+#      ((        ( _     \ /  //___/-=---=----'                 #
+#       `         ` `\    /  //---/--==----=-'                  #
+#             ,-.    | / \_//-_.'==-==---='       *             #
+#      *     (.-.`\  | |'../-'=-=-=-=--'                   .    #
+#      .      (' `\`\| //_|-\.`;-~````~,        _               #
+#                   \ | \_,_,_\.'        \     .'_`\            #
+#     *             `\            ,    , \    || `\\            #
+#                 .   \    /   _.--\    \ '._.'/  / |         * #
+#                     /  /`---'   \ \   |`'---'   \/            #
+#          *         / /'          \ ;-. \                      #
+#                 __/ /      *    __) \ ) `|            *       #
+#    .           ((='--;)      .  (,___/(,_/                    #
+#                *                                        .   . #
+#       *                David Mojica S.E                       #
+#          GitHub: https://github.com/DavidMojicaDev            #
+#     .         Gmail : davidmojicav@gmail.com                  #
+#---------------------------------------------------------------#
+#            Release version: 1.2 - 7/10/23 (saturday)          #
+#***************************************************************#
+#------------------------------------------------------------------------------------
+#Imports
+#------------------------------------------------------------------------------------
 import unicodedata
+#Emojis
+emoji_medals  = ["🥇", " 🥈 ", " 🥉"]
+emoji_numbers = ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"]
+
+def num_to_emoji(num):
+    """Convierte un numero a carácteres emoji """
+    return ' '.join(emoji_numbers[int(n)] for n in str(num))
+
+def print_chars(match):
+    """ 
+    Imprime los caracteres y sus puntos extras en forma de lista de diccionarios.
+
+    Esta función toma como entrada un mensaje (msg) y la cantidad de palabras válidas (cant_validas) que el usuario puede encontrar.
+    Luego recorre la lista de diccionarios chars_display, que contiene los caracteres y sus respectivos puntos extras,
+    y los imprime en un formato legible.
+
+    Args:
+        msg (str): Mensaje que se imprimirá junto a la cantidad de palabras válidas.
+        cant_validas (int): Cantidad de palabras válidas que el usuario puede encontrar.
+
+    Returns:
+        None: Esta función no devuelve ningún valor; simplemente imprime la información formateada.
+    """
+    string_chars = ""
+    for index, dicts in enumerate(match.chars_display, start=1):
+        for char, puntos in dicts.items():
+            string_chars += f" **{char} - **{emoji_numbers[puntos]}"
+           
+            if index % 4 == 0:
+                string_chars += "\n"
+    return string_chars
 
 def puede_formarse(palabra, cadena):
     """
@@ -122,28 +180,3 @@ def tryParse(dato, tipo_dato):
         return tipo_dato(dato), True
     except (ValueError, TypeError):
         return dato, False
-
-#***************************************************************#
-#                  .                        *                *  #
-#                *          MADE BY            .                #
-#        *           _____,    _..-=-=-=-=-====--,  *   .       #
-#       _         _.'a   /  .-',___,..=--=--==-'`               #
-#      ((        ( _     \ /  //___/-=---=----'                 #
-#       `         ` `\    /  //---/--==----=-'                  #
-#             ,-.    | / \_//-_.'==-==---='       *             #
-#      *     (.-.`\  | |'../-'=-=-=-=--'                   .    #
-#      .      (' `\`\| //_|-\.`;-~````~,        _               #
-#                   \ | \_,_,_\.'        \     .'_`\            #
-#     *             `\            ,    , \    || `\\            #
-#                 .   \    /   _.--\    \ '._.'/  / |         * #
-#                     /  /`---'   \ \   |`'---'   \/            #
-#          *         / /'          \ ;-. \                      #
-#                 __/ /      *    __) \ ) `|            *       #
-#    .           ((='--;)      .  (,___/(,_/                    #
-#                *                                        .   . #
-#       *                David Mojica S.E                       #
-#          GitHub: https://github.com/DavidMojicaDev            #
-#     .         Gmail : davidmojicav@gmail.com                  #
-#---------------------------------------------------------------#
-#            Release version: 1.0 - 25/08/23 (friday)           #
-#***************************************************************#

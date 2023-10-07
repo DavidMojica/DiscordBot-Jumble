@@ -1,13 +1,16 @@
-class Player(object):
-    def __init__(self, name):
-        self.name   = name
-        self.points = 0
-        self.words  = 0
-        
-    def __addpoints__(self, points):
-        self.points += points
-        self.words += 1
-        
+import discord
+class Crear_Respuesta():
+    def __init__(self, title, content):
+        self.title = title
+        self.content = content
+        self.respuesta = discord.Embed(
+            title = self.title,
+            description=self.content,
+            colour= int("FFFFFF",16))
+    @property
+    def enviar(self):
+        return self.respuesta
+
 #***************************************************************#
 #                  .                        *                *  #
 #                *          MADE BY            .                #
@@ -18,8 +21,8 @@ class Player(object):
 #             ,-.    | / \_//-_.'==-==---='       *             #
 #      *     (.-.`\  | |'../-'=-=-=-=--'                   .    #
 #      .      (' `\`\| //_|-\.`;-~````~,        _               #
-#                   \ | \_,_,_\.'       \      .'_`\            #
-#     *             `\            ,    , \    || `\ \           #
+#                   \ | \_,_,_\.'        \     .'_`\            #
+#     *             `\            ,    , \    || `\\            #
 #                 .   \    /   _.--\    \ '._.'/  / |         * #
 #                     /  /`---'   \ \   |`'---'   \/            #
 #          *         / /'          \ ;-. \                      #
