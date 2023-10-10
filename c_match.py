@@ -20,7 +20,7 @@
 #          GitHub: https://github.com/DavidMojicaDev            #
 #     .         Gmail : davidmojicav@gmail.com                  #
 #---------------------------------------------------------------#
-#            Release version: 1.2 - 7/10/23 (saturday)          #
+#            Release version: 1.3 - 10/10/23 (thursday)         #
 #***************************************************************#
 import asyncio
 import io
@@ -197,7 +197,8 @@ class Match:
     async def load(self, ctx, lang):
         language_files = {
             "1": ("EN/package_EN.json", "EN/config_EN.json"),
-            "2": ("ES/package_ES.json", "ES/config_ES.json")
+            "2": ("ES/package_ES.json", "ES/config_ES.json"),
+            "3": ("PT/package_PT.json", "PT/config_PT.json")
         }
         if lang not in language_files:
             return "7"

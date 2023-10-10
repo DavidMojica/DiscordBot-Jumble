@@ -1,0 +1,119 @@
+{
+    "consonants": [
+        "b",
+        "c",
+        "d",
+        "f",
+        "g",
+        "h",
+        "j",
+        "k",
+        "l",
+        "m",
+        "n",
+        "p",
+        "q",
+        "r",
+        "s",
+        "t",
+        "v",
+        "w",
+        "x",
+        "y",
+        "z"
+    ],
+    "vocals": [
+        "a",
+        "e",
+        "i",
+        "o",
+        "u"
+    ],
+    "loading": [
+        "Carregando..."
+    ],
+    "gameover": [
+        "Tempo esgotado!",
+        "A partida acabou!",
+        "É isso! O jogo chegou ao fim.",
+        "O tempo acabou!",
+        "É tudo",
+        "Fim",
+        "Jogo acabou!",
+        "O jogo acabou, não há mais palavras"
+    ],
+    "gameover_larger_words": [
+        "palavras mais extensas que poderiam ter sido escritas nesta partida",
+        "palavras que são as mais longas na partida"
+    ],
+    "startgame": [
+        "O embaralhado é:",
+        "Olá a todos! O embaralhado é:",
+        "Vamos começar! Aqui está a palavra embaralhada:",
+        "Começando agora... O embaralhado é:"
+    ],
+    "startgame_2": [
+        "Palavras disponíveis:",
+        "Palavras possíveis:",
+        "Total de palavras possíveis:"
+    ],
+    "timeout": [
+        "Ops.. Ninguém está jogando, a partida acabou.",
+        "Parece que todos fizeram uma pausa. A sessão de jogo terminou.",
+        "Tempo esgotado! Parece que os participantes estão em uma pausa. O jogo acabou.",
+        "tempo esgotado"
+    ],
+    "correct": [
+        "Bom trabalho!",
+        "Ótimo!",
+        "Correto!",
+        "Incrível!",
+        "Limpo!",
+        "Ótimo!",
+        "Bingo!",
+        "Bem feito!"
+    ],
+    "incorrect": [
+        "Ops! Palavra não encontrada",
+        "Oh não! Tão perto",
+        "Falha, tente novamente",
+        "Oops! Essa palavra não existe",
+        "Palavra errada",
+        "Erro ao clicar",
+        "Escapou",
+        "Não desta vez",
+        "Palavra errada :/",
+        "Tão estranho D:"
+    ],
+    "repeated": [
+        "Oops! Alguém já disse a palavra antes!",
+        "Não é permitido repetir palavras!",
+        "Palavra repetida.",
+        "Esta palavra está repetida"
+    ],
+    "hurry": [
+        "Apresse-se! O tempo está acabando!",
+        "Continue. Parece que o tempo está acabando",
+        "Apresse-se, não seja preguiçoso"
+    ],
+    "remember": [
+        "Lembre-se, os caracteres são:",
+        "Lembre-se, o embaralhado é: "
+    ],
+    "time_left": [
+        "Tempo restante -> "
+    ],
+    "noplayers": [
+        "Ninguém jogou esta rodada zzz",
+        "Parece que"
+    ],
+    "players": [
+        "Os jogadores mais inteligentes nesta partida:"
+    ],
+    "final_precomplement": [
+        "pontos"
+    ],
+    "final_complement": [
+        "palavras"
+    ]
+}

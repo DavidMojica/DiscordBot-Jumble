@@ -20,7 +20,7 @@
 #          GitHub: https://github.com/DavidMojicaDev            #
 #     .         Gmail : davidmojicav@gmail.com                  #
 #---------------------------------------------------------------#
-#            Release version: 1.2 - 7/10/23 (saturday)          #
+#            Release version: 1.3 - 10/10/23 (thursday)         #
 #***************************************************************#
 #------------------------------------------------------------------------------------
 #Imports
@@ -31,7 +31,6 @@ import json
 import os
 #Discord libs
 import discord
-import essentials
 from discord.ext import commands
 from discord.ext.commands import errors
 from c_match import Match
@@ -41,7 +40,7 @@ from ds_prints import Crear_Respuesta
 #------------------------------------------------------------------------------------
 #---Bot---#
 file_config_bot     = "config_bot/config_bot.json"
-template_config_bot = {"prefix" : "%", "token": ""}
+template_config_bot = {"prefix" : "/", "token": ""}
 bot                 = None
 
 #---Jumble---#
@@ -53,7 +52,7 @@ timeout_menu     = 10 #Expand
 active_matches       = {}
 
 #Messages
-msg_menu = { 'head': "| JUMBLE |" , 'body': "Please select your languaje (give me a number):\n1: English\n2: Español\n0: Exit"}
+msg_menu = { 'head': "| JUMBLE |" , 'body': "Please select your languaje (give me a number):\n1: English\n2: Español\n3: Portuguese\n0: Exit"}
 msg_4    = {'head': 'Stopped match', 'body': 'The match has been stoped.'}
 msg_5    = {'head': 'Reseted', 'body': 'The match is reestarting...'}
 msg_6    = {'head': 'Set time', 'body': 'The time was set in: '}
