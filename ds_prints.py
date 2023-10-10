@@ -33,5 +33,5 @@ class Crear_Respuesta():
 #          GitHub: https://github.com/DavidMojicaDev            #
 #     .         Gmail : davidmojicav@gmail.com                  #
 #---------------------------------------------------------------#
-#            Release version: 1.2 - 7/10/23 (saturday)          #
+#            Release version: 1.3 - 10/10/23 (thursday)         #
 #***************************************************************#
