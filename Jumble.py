@@ -42,6 +42,8 @@ from ds_prints import Crear_Respuesta
 file_config_bot     = "config_bot/config_bot.json"
 template_config_bot = {"prefix" : "/", "token": ""}
 bot                 = None
+cluster             = "1"
+page_cluster        = "http://jumble.free.nf/pages/state.html"
 
 #---Jumble---#
 tiempo_partida   = 180
@@ -56,6 +58,7 @@ msg_menu = { 'head': "| JUMBLE |" , 'body': "Please select your languaje (give m
 msg_4    = {'head': 'Stopped match', 'body': 'The match has been stoped.'}
 msg_5    = {'head': 'Reseted', 'body': 'The match is reestarting...'}
 msg_6    = {'head': 'Set time', 'body': 'The time was set in: '}
+msg_7    = {'head': 'Cluster info', 'body': f'Your bot cluster is: {cluster} \n You can check the cluster status at: {page_cluster}'}
 
 #Errors
 error_1 = {'head': 'Think faster next time!', 'body' : 'You have took too long to respond.'}
@@ -115,6 +118,10 @@ def main():
 
         #     await active_matches[server_id].start(ctx, bot, seconds)
         #     await ctx.send(embed=Crear_Respuesta(f'{essentials.num_to_emoji(msg_6["head"])}s', msg_6["body"]).enviar)
+
+        @bot.command(name="cluster", help="Shows the bot cluster id.")
+        async def cluster(ctx):
+            await ctx.send(embed = Crear_Respuesta(msg_7["head"], msg_7["body"]).enviar)
 
         @bot.command(name="reset", help="Restarts a jumble match.")
         async def reset(ctx):
